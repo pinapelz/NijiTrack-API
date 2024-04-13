@@ -113,8 +113,9 @@ def get_channel_information(channel_name):
         next_milestone = find_next_milestone(current_subscriber_count)
         days_until_next_milestone = (next_milestone - model.intercept_) / model.coef_
         days_until_next_milestone_scalar = int(days_until_next_milestone[0])
-        next_milestone_date = (df.index[0] + pandas.Timedelta(days=days_until_next_milestone_scalar)).date()
-        time_until_next_milestone = (next_milestone_date - datetime.datetime.now().date()).days
+        today = datetime.datetime.now().date()
+        next_milestone_date = today + datetime.timedelta(days=days_until_next_milestone_scalar)
+        time_until_next_milestone = (next_milestone_date - today).days
         if time_until_next_milestone < 0:
             raise OverflowError
         channel_data["next_milestone_date"] = str(next_milestone_date)
