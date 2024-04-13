@@ -1,6 +1,3 @@
-"""
-Flask app for serving the static files
-"""
 from flask import Flask, send_file, jsonify
 from flask_cors import CORS
 from sql.pg_handler import PostgresHandler
@@ -14,16 +11,6 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-# Optional setting to use any of the custom options below
-START_DATE = "2023-04-01" # 2023 April 1st
-
-# Do not include datapoints before the START_DATE for any /api/subscribers/ endpoint
-# For when you only want to serve actual data you collected at those specific endpoints
-ALL_EXCLUDE_MANUAL_DATA = False
-
-# Do not include datapoints before the START_DATE for any /api/subscribers/<channel_id> endpoint
-# For when you only want to serve actual data you collected at those specific endpoints
-INDIVIDUAL_EXCLUDE_MANUAL_DATA = True
 
 def create_database_connection():
     """
