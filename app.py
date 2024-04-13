@@ -30,10 +30,10 @@ def create_database_connection():
     Creates a database connection using the environment variables
     :param: auth_append: str = "" - If you want to use a different set of variables for persisitance of sessions
     """
-    hostname = "***REMOVED***"
-    user = "***REMOVED***"
-    password = "***REMOVED***"
-    database = "postgres"
+    hostname = os.environ.get("POSTGRES_HOST")
+    user = os.environ.get("POSTGRES_USER")
+    password = os.environ.get("POSTGRES_PASSWORD")
+    database = os.environ.get("POSTGRES_DATABASE")
     return PostgresHandler(host_name=hostname, username=user, password=password, database=database, port=5432)
 
 @app.route("/")
