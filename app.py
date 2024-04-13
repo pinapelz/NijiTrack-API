@@ -7,6 +7,9 @@ import pandas
 from sklearn.linear_model import Ridge
 import numpy as np
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
@@ -43,7 +46,7 @@ def api_subscribers():
 def api_subscribers_channel(channel_name):
     server = create_database_connection()
     query = "SELECT * FROM subscriber_data_historical WHERE name = %s AND timestamp > %s ORDER BY TO_CHAR(timestamp, 'YYYY-MM-DD')"
-    data = server.execute_query(query, (channel_name, START_DATE))
+    data = server.execute_query(query, (channel_name, os.environ.get("START_DATE"),))
     labels = []
     data_points = []
     seen_dates = set()
