@@ -1,0 +1,3 @@
+DELETE_THIS and write channel id to ignore on each line
+i.e UC-1234567890
+UC-0987654321
