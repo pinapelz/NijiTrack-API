@@ -38,7 +38,7 @@ def api_subscribers():
     server = create_database_connection()
     query = 'SELECT sd.*, h.* FROM subscriber_data sd INNER JOIN "24h_historical" h ON sd.channel_id = h.channel_id ORDER BY sd.subscriber_count DESC'
     data = server.execute_query(query)
-    channel_data_list = [{"channel_name": row[3], "profile_pic": row[2], "subscribers": row[4], "sub_org": row[5], "video_count": row[6], "day_diff": int(row[4] - int(row[10]))} for row in data]
+    channel_data_list = [{"channel_name": row[3], "profile_pic": row[2], "subscribers": row[4], "sub_org": row[5], "video_count": row[6], "views": row[8],  "day_diff": int(row[4] - int(row[11]))} for row in data]
     subscriber_data = {"timestamp": datetime.datetime.now(), "channel_data": channel_data_list}
     return jsonify(subscriber_data)
 
