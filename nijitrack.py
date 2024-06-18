@@ -78,6 +78,7 @@ def record_subscriber_data(data: list, force_refresh: bool = False):
         channel_name = channel["english_name"]
         sub_org = channel["group"]
         video_count = channel["video_count"]
+        view_count = channel["view_count"]
         if channel_name is None:
             channel_name = channel["name"]
         if sub_org is None:
@@ -86,7 +87,7 @@ def record_subscriber_data(data: list, force_refresh: bool = False):
         utc_now = datetime.now(pytz.timezone('UTC'))
         pst_now = utc_now.astimezone(pytz.timezone('US/Pacific'))
         formatted_time = pst_now.strftime('%Y-%m-%d %H:%M:%S')
-        data_tuple = (channel_id, pfp, channel_name, sub_count, sub_org, video_count, formatted_time)
+        data_tuple = (channel_id, pfp, channel_name, sub_count, sub_org, video_count, view_count, formatted_time)
         historical_data_tuple = (channel_id, pfp, channel_name, sub_count, formatted_time)
         server.insert_row(table_name = DATA_SETTING["TABLE_LIVE"], column = DATA_SETTING["LIVE_HEADER"], data=data_tuple)
         record_diff_data(historical_data_tuple, refresh_daily)
