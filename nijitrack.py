@@ -25,7 +25,7 @@ def create_database_connection():
     user = os.environ.get("POSTGRES_USER")
     password = os.environ.get("POSTGRES_PASSWORD")
     database = os.environ.get("POSTGRES_DATABASE")
-    return PostgresHandler(host_name=hostname, username=user, password=password, database=database, port=5432)
+    return PostgresHandler(host_name=hostname, username=user, password=password, database=database, port=6543)
 
 @log("Initializing Database")
 def initialize_database(server: PostgresHandler):
@@ -100,7 +100,7 @@ def holodex_generation(server: PostgresHandler, force_refresh: bool = False):
     holodex_organizations = DATA_SETTING["HOLODEX_ORGS"].split(",")
     server.clear_table(DATA_SETTING["TABLE_LIVE"])
     server.reset_auto_increment(DATA_SETTING["TABLE_LIVE"])
-    holodex = HolodexAPI("6f94494a-1002-4893-9c71-f2ec9a2e4dff", organization="Phase%20Connect")
+    holodex = HolodexAPI(os.environ.get("HOLODEX_KEY"), organization="Phase%20Connect")
     for organization in holodex_organizations:
         holodex.set_organization(organization)
         subscriber_data = holodex.get_subscriber_data()
