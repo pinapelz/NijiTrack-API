@@ -31,7 +31,9 @@ class HolodexAPI(WebAPI):
         for channel in data:
             print("DEBUG: ", channel["id"])
             try:
-                channel["description"] = self.get_channel_description(channel["id"])
+                additional_data = self.get_additional_data(channel["id"])
+                channel["view_count"] = additional_data[0]
+                channel["description"] = additional_data[1]
                 if channel["inactive"]:
                     self._inactive_channels.append(channel["id"])
                     continue
@@ -42,19 +44,13 @@ class HolodexAPI(WebAPI):
         self._channel_data = active_channels
         return active_channels
 
-    def get_view_count(self, channel_id: str) -> int:
+    
+    def get_additional_data(self, channel_id: str) -> tuple:
         """
-        Gets the view count for a particular channel
-        """
-        data = self._download_url(f"channels/{channel_id}")
-        return data["view_count"]
-
-    def get_channel_description(self, channel_id: str) -> str:
-        """
-        Gets the description for a particular channel
+        Gets additional data for a particular channel
         """
         data = self._download_url(f"channels/{channel_id}")
-        return data["description"]
+        return data["view_count"], data["description"]
     
     def set_organization(self, organization: str):
         """
