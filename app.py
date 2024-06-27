@@ -1,4 +1,4 @@
-from flask import Flask, send_file, jsonify
+from flask import Flask, send_file, jsonify, request
 from flask_cors import CORS
 from sql.pg_handler import PostgresHandler
 import fileutil as fs
@@ -75,6 +75,30 @@ def api_subscribers_channel_7d(channel_name):
         data_points.append(row[4])
         seen_dates.add(date_string)
     return jsonify({"labels": labels[-7:], "datasets": data_points[-7:]})
+
+@app.route("/api/subscribers/<channel_name>/milestones")
+def get_channel_milestones(channel_name):
+    server = create_database_connection()
+    milestone_multiple = request.args.get("q")
+    if not milestone_multiple:
+        milestone_multiple = 10000
+    query = """
+    SELECT name, subscriber_count, MIN(timestamp) 
+    FROM subscriber_data_historical 
+    WHERE name = %s AND MOD(subscriber_count, %s) = 0
+    GROUP BY name, subscriber_count
+    ORDER BY subscriber_count, MIN(timestamp)
+    LIMIT 10
+    """
+    data = server.execute_query(query, (channel_name, milestone_multiple,))
+    dates = []
+    milestones = []
+    for row in data:
+        date_string = row[2].strftime("%Y-%m-%d")
+        dates.append(date_string)
+        milestones.append(row[1])
+    return jsonify({"milestones": milestones, "dates": dates})
+
 
 @app.route("/api/channel/<channel_name>")
 def get_channel_information(channel_name):
