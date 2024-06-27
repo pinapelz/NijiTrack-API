@@ -92,21 +92,13 @@ def get_channel_milestones(channel_name):
     data = server.execute_query(query, (channel_name,))
     dates = []
     milestones = []
-    found_milestone = False
     for row in data:
         subscriber_count = row[0]
         while subscriber_count >= current_milestone:
-            if not found_milestone or subscriber_count == current_milestone:
-                date_string = row[1].strftime("%Y-%m-%d")
-                dates.append(date_string)
-                milestones.append(subscriber_count)
-                current_milestone += milestone_increment
-                found_milestone = True
-                break
-            else:
-                current_milestone += milestone_increment
-                found_milestone = False
-
+            date_string = row[1].strftime("%Y-%m-%d")
+            dates.append(date_string)
+            milestones.append(current_milestone)
+            current_milestone += milestone_increment
     return jsonify({"milestones": milestones, "dates": dates})
 
 
