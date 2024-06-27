@@ -80,7 +80,7 @@ def api_subscribers_channel_7d(channel_name):
 def get_channel_milestones(channel_name):
     server = create_database_connection()
     milestone_increment = int(request.args.get("q", 10000))
-    initial_milestone = 20000
+    initial_milestone = 10000
     current_milestone = initial_milestone
     query = """
     SELECT subscriber_count, MIN(timestamp) 
