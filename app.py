@@ -79,24 +79,34 @@ def api_subscribers_channel_7d(channel_name):
 @app.route("/api/subscribers/<channel_name>/milestones")
 def get_channel_milestones(channel_name):
     server = create_database_connection()
-    milestone_multiple = request.args.get("q")
-    if not milestone_multiple:
-        milestone_multiple = 10000
+    milestone_increment = int(request.args.get("q", 10000))
+    initial_milestone = 20000
+    current_milestone = initial_milestone
     query = """
-    SELECT name, subscriber_count, MIN(timestamp) 
+    SELECT subscriber_count, MIN(timestamp) 
     FROM subscriber_data_historical 
-    WHERE name = %s AND MOD(subscriber_count, %s) = 0
-    GROUP BY name, subscriber_count
-    ORDER BY subscriber_count, MIN(timestamp)
-    LIMIT 10
+    WHERE name = %s
+    GROUP BY subscriber_count
+    ORDER BY subscriber_count ASC
     """
-    data = server.execute_query(query, (channel_name, milestone_multiple,))
+    data = server.execute_query(query, (channel_name,))
     dates = []
     milestones = []
+    found_milestone = False
     for row in data:
-        date_string = row[2].strftime("%Y-%m-%d")
-        dates.append(date_string)
-        milestones.append(row[1])
+        subscriber_count = row[0]
+        while subscriber_count >= current_milestone:
+            if not found_milestone or subscriber_count == current_milestone:
+                date_string = row[1].strftime("%Y-%m-%d")
+                dates.append(date_string)
+                milestones.append(subscriber_count)
+                current_milestone += milestone_increment
+                found_milestone = True
+                break
+            else:
+                current_milestone += milestone_increment
+                found_milestone = False
+
     return jsonify({"milestones": milestones, "dates": dates})
 
 
