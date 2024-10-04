@@ -1,14 +1,13 @@
 import plotly.graph_objects as go
-import plotly.express as px
 import pandas as pd
 import warnings
 from member_colors import member_color_map
 import random
 
 def plot_subscriber_count_over_time(server, table_name, gtitle="Subscriber Count Over Time for Phase Connect Members",
-                                    overrideQuery=None, markers="lines", exclude_channels=[]):
+                                    markers="lines", exclude_channels=[]):
     warnings.filterwarnings('ignore') # Ignore pandas warning regarding pyodbc
-    query = f"SELECT name, subscriber_count, timestamp, channel_id FROM {table_name} ORDER by timestamp DESC" if overrideQuery is None else overrideQuery
+    query = f"SELECT name, subscriber_count, timestamp, channel_id FROM {table_name} ORDER by timestamp DESC"
     df = pd.read_sql_query(query, server.get_connection())
     groups = df.groupby("name")
     fig = go.Figure()
