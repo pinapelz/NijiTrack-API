@@ -11,7 +11,7 @@ class PostgresHandler:
             "port": port
         }
         self._connection = psycopg2.connect(**db_params)
-        print("Handler Success")
+        self.print_to_debug("Connected to database successfully")
     
     def get_connection(self):
         return self._connection
@@ -163,6 +163,9 @@ class PostgresHandler:
             print(f"Failed to get most recently added row from {table_name}")
             print(e)
             return False
+    
+    def print_to_debug(self, message: str):
+        print("[PostgresHandler] " + message)
 
     
     def close_connection(self):
