@@ -1,20 +1,22 @@
+import argparse
+import os
 from datetime import datetime
 
-import fileutil as fs
+import dotenv
+import pytz
+from b2sdk.v2 import *
+from logger import *
 from sql.pg_handler import PostgresHandler
 from webapi.holodex import HolodexAPI
 from webapi.youtube import YouTubeAPI
-from b2sdk.v2 import *
+
+import fileutil as fs
 import graph
-from decorators import *
-import argparse
-import os
-import pytz
-import dotenv
 
 dotenv.load_dotenv()
 
 DATA_SETTING = fs.load_json_file("sql_table_config.json")
+logger = Logger("nijitrack-logs.txt")
 
 def create_database_connection():
     """
@@ -25,22 +27,28 @@ def create_database_connection():
     user = os.environ.get("POSTGRES_USER")
     password = os.environ.get("POSTGRES_PASSWORD")
     database = os.environ.get("POSTGRES_DATABASE")
-    return PostgresHandler(host_name=hostname, username=user, password=password, database=database, port=6543)
+    port = os.environ.get("POSTGRES_PORT") if os.environ.get("POSTGRES_PORT") else 6543
+    return PostgresHandler(host_name=hostname, username=user, password=password, database=database, port=port)
 
-@log("Initializing Database")
+@track_task_time("Initializing Database")
 def initialize_database(server: PostgresHandler):
     server.create_table(name = DATA_SETTING["TABLE_LIVE"], column = DATA_SETTING["LIVE_COLUMNS"])
     server.create_table(name = DATA_SETTING["TABLE_HISTORICAL"], column = DATA_SETTING["HISTORICAL_COLUMNS"])
     server.create_table(name = DATA_SETTING["TABLE_DAILY"], column = DATA_SETTING["DAILY_COLUMNS"])
 
 
-@log("Inserting Live Data into Database")
+@track_task_time("Inserting Live Data into Database")
 def record_subscriber_data(data: list, force_refresh: bool = False):
+    """
+    Inserts subscriber data into the database. If the channel does not exist, it will insert a new row.
+    Rows are only inserted into the historical table if it has been 24 hours since the last row or it does not exist.
+    Rows are added to the live table regardless
+    """
     def transform_sql_string(string: str) -> str:
         return string.encode("ascii", "ignore").decode().replace("'", "''")
-    def record_diff_data(data_tuple: tuple, refresh_daily: bool):
+
+    def update_data_records(data_tuple: tuple, refresh_daily: bool):
         if not server.check_row_exists(DATA_SETTING["TABLE_DAILY"], "channel_id", channel_id):
-            # data_tuple = (channel_id, pfp, channel_name, sub_count, time.strftime('%Y-%m-%d %H:%M:%S'))
             server.insert_row(DATA_SETTING["TABLE_DAILY"], DATA_SETTING["DAILY_HEADER"], (data_tuple[0], data_tuple[3]))
             server.insert_row(table_name = DATA_SETTING["TABLE_HISTORICAL"], column = DATA_SETTING["HISTORICAL_HEADER"], data=data_tuple)
             return
@@ -49,7 +57,7 @@ def record_subscriber_data(data: list, force_refresh: bool = False):
             server.insert_row(table_name = DATA_SETTING["TABLE_HISTORICAL"], column = DATA_SETTING["HISTORICAL_HEADER"], data=data_tuple)
     
     def check_diff_refresh():
-        last_updated = server.get_most_recently_added_row_time(DATA_SETTING["TABLE_HISTORICAL"])[0]
+        last_updated = server.get_most_recently_added_row_time(DATA_SETTING["TABLE_HISTORICAL"])
         if not last_updated:
             print("Failed to get the most recently added row time.")
             return False
@@ -62,13 +70,13 @@ def record_subscriber_data(data: list, force_refresh: bool = False):
         elif time_diff.days == 0 and time_diff.seconds >= 85800:
             return True
         else:
-            print("Skipping Daily Refresh. It has not been a day yet")
+            logger.log(f"Time difference is {time_diff.days} days and {time_diff.seconds} seconds")
             return False
     exclude_channels = fs.get_excluded_channels()
     if force_refresh:
-        refresh_daily = True
+        should_update_historical_data = True
     else:
-        refresh_daily = check_diff_refresh()
+        should_update_historical_data = check_diff_refresh()
     for channel in data:
         channel_id = channel["id"]
         if channel_id in exclude_channels:
@@ -90,17 +98,16 @@ def record_subscriber_data(data: list, force_refresh: bool = False):
         data_tuple = (channel_id, pfp, channel_name, sub_count, sub_org, video_count, view_count, formatted_time)
         historical_data_tuple = (channel_id, pfp, channel_name, sub_count, formatted_time)
         server.insert_row(table_name = DATA_SETTING["TABLE_LIVE"], column = DATA_SETTING["LIVE_HEADER"], data=data_tuple)
-        record_diff_data(historical_data_tuple, refresh_daily)
+        update_data_records(historical_data_tuple, should_update_historical_data)
 
 
-@log("Running Holodex Generation")
+@track_task_time("Running Holodex Generation")
 def holodex_generation(server: PostgresHandler, force_refresh: bool = False):
     """
     Generates the data from the Holodex API
     """
     holodex_organizations = DATA_SETTING["HOLODEX_ORGS"].split(",")
     server.clear_table(DATA_SETTING["TABLE_LIVE"])
-    server.reset_auto_increment(DATA_SETTING["TABLE_LIVE"])
     holodex = HolodexAPI(os.environ.get("HOLODEX_KEY"), organization="Phase%20Connect")
     for organization in holodex_organizations:
         holodex.set_organization(organization)
@@ -108,14 +115,13 @@ def holodex_generation(server: PostgresHandler, force_refresh: bool = False):
         record_subscriber_data(subscriber_data, force_refresh)
     return holodex.get_generated_channel_data(), holodex.get_inactive_channels()
 
-@log("Running YouTube Generation")
+@track_task_time("Running YouTube Generation")
 def youtube_generation(server: PostgresHandler):
     """
     Generates the data from the YouTube API
     """
     ytapi = YouTubeAPI(os.environ.get("YOUTUBE_API_KEY"))
     server.clear_table(DATA_SETTING["TABLE_LIVE"])
-    server.reset_auto_increment(DATA_SETTING["TABLE_LIVE"])
     data = ytapi.get_data_all_channels(fs.get_local_channels())
     record_subscriber_data(data)
     return data
@@ -153,6 +159,7 @@ if __name__ == "__main__":
     parser.add_argument('--mode', choices=['yt', 'holodex'], help='Specify the data source to use (yt or holodex)')
     parser.add_argument('--b2', action='store_true', help="Upload graph html to Backblaze B2")
     parser.add_argument('--ff', action='store_true', help="Force a full refresh of all data (override daily refresh)")
+    parser.add_argument('--log', action='store_true', help="Log the output to a file")
     args = parser.parse_args()
     server = create_database_connection()
     initialize_database(server)
