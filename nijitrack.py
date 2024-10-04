@@ -58,10 +58,10 @@ def record_subscriber_data(data: list, force_refresh: bool = False):
     
     def check_diff_refresh():
         last_updated = server.get_most_recently_added_row_time(DATA_SETTING["TABLE_HISTORICAL"])
-        if not last_updated:
+        if last_updated is None or len(last_updated) == 0 or not last_updated[0]:
             print("Failed to get the most recently added row time.")
             return False
-        last_updated = pytz.timezone('US/Pacific').localize(last_updated)
+        last_updated = pytz.timezone('US/Pacific').localize(last_updated[0])
         utc_now = datetime.now(pytz.timezone('UTC'))
         pst_now = utc_now.astimezone(pytz.timezone('US/Pacific'))
         time_diff = pst_now - last_updated
