@@ -159,7 +159,6 @@ if __name__ == "__main__":
     parser.add_argument('--mode', choices=['yt', 'holodex'], help='Specify the data source to use (yt or holodex)')
     parser.add_argument('--b2', action='store_true', help="Upload graph html to Backblaze B2")
     parser.add_argument('--ff', action='store_true', help="Force a full refresh of all data (override daily refresh)")
-    parser.add_argument('--log', action='store_true', help="Log the output to a file")
     args = parser.parse_args()
     server = create_database_connection()
     initialize_database(server)
