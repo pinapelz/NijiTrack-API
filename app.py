@@ -101,23 +101,6 @@ def get_channel_milestones(channel_name):
             current_milestone += milestone_increment
     return jsonify({"milestones": milestones, "dates": dates})
 
-@app.route("/api/subscribers/<channel_name>/past_diff")
-def get_past_records(channel_name):
-    server = create_database_connection()
-    query = "SELECT * FROM subscriber_data_historical WHERE name = %s ORDER BY timestamp DESC"
-    data = server.execute_query(query, (channel_name,))
-    if len(data) == 0:
-        return jsonify({"diff_1d": None, "diff_7d": None, "diff_30d": None})
-    latest_sub_count = data[0][4]
-    sub_count_1d_ago = next((row[4] for row in data if (datetime.datetime.now() - row[5]).days >= 1), None)
-    sub_count_7d_ago = next((row[4] for row in data if (datetime.datetime.now() - row[5]).days >= 7), None)
-    sub_count_30d_ago = next((row[4] for row in data if (datetime.datetime.now() - row[5]).days >= 30), None)
-    diff_1d = latest_sub_count - sub_count_1d_ago if sub_count_1d_ago is not None else None
-    diff_7d = latest_sub_count - sub_count_7d_ago if sub_count_7d_ago is not None else None
-    diff_30d = latest_sub_count - sub_count_30d_ago if sub_count_30d_ago is not None else None
-    return jsonify({"diff_1d": diff_1d, "diff_7d": diff_7d, "diff_30d": diff_30d})
-
-
 @app.route("/api/channel/<channel_name>")
 def get_channel_information(channel_name):
     def find_next_milestone(subscriber_count):
@@ -131,7 +114,7 @@ def get_channel_information(channel_name):
     query = "SELECT * FROM subscriber_data WHERE name = %s"
     data = server.execute_query(query, (channel_name,))
     channel_data = {"channel_id": data[0][1], "channel_name": data[0][3], "profile_pic": data[0][2], "subscribers": data[0][4], "sub_org": data[0][5], "video_count": data[0][6], "view_count": data[0][8]}
-    historical_data = server.execute_query("SELECT * FROM subscriber_data_historical WHERE name = %s", (channel_name,))
+    historical_data = server.execute_query("SELECT * FROM subscriber_data_historical WHERE name = %s ORDER BY timestamp DESC", (channel_name,))
     current_subscriber_count = data[0][4]
     subscriber_points = []
     date_strings = []
@@ -170,7 +153,20 @@ def get_channel_information(channel_name):
         channel_data["next_milestone_date"] = "N/A"
         channel_data["days_until_next_milestone"] = "N/A"
         channel_data["next_milestone"] = "N/A"
+    if len(historical_data) == 0:
+        return jsonify({"diff_1d": None, "diff_7d": None, "diff_30d": None})
+    latest_sub_count = historical_data[0][4]
+    sub_count_1d_ago = next((row[4] for row in data if (datetime.datetime.now() - row[5]).days >= 1), None)
+    sub_count_7d_ago = next((row[4] for row in data if (datetime.datetime.now() - row[5]).days >= 7), None)
+    sub_count_30d_ago = next((row[4] for row in data if (datetime.datetime.now() - row[5]).days >= 30), None)
+    diff_1d = latest_sub_count - sub_count_1d_ago if sub_count_1d_ago is not None else None
+    diff_7d = latest_sub_count - sub_count_7d_ago if sub_count_7d_ago is not None else None
+    diff_30d = latest_sub_count - sub_count_30d_ago if sub_count_30d_ago is not None else None
+    channel_data["diff_1d"] = diff_1d
+    channel_data["diff_7d"] = diff_7d
+    channel_data["diff_30d"] = diff_30d
     return jsonify(channel_data)
+
 @app.route("/api/announcement")
 def api_announcement():
     announcement_data = {"message": "None", "show_message": False}
