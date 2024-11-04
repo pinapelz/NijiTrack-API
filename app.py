@@ -8,6 +8,7 @@ from sklearn.linear_model import Ridge
 import numpy as np
 import os
 from dotenv import load_dotenv
+from member_colors import member_groups
 
 load_dotenv()
 
@@ -184,10 +185,14 @@ def get_channel_information(channel_name):
         channel_data["next_milestone"] = "N/A"
     return jsonify(channel_data)
 
-@app.route("/api/announcement")
-def api_announcement():
-    announcement_data = {"message": "None", "show_message": False}
-    return jsonify(announcement_data)
+@app.route("/api/groups")
+def api_groups():
+    group_mappings = {}
+    for key, value in member_groups.items():
+        if value not in group_mappings:
+            group_mappings[value] = []
+        group_mappings[value].append(key)
+    return jsonify(group_mappings)
 
 @app.errorhandler(404)
 def not_found(error):
