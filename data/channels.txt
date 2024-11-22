@@ -1,4 +1,3 @@
-# DELETE THIS: [Add new line delineated channels here]. One each line
-# DELETE THIS: ChannelName:
-# DELETE THIS: [Add new line delineated channels here]. One each line with channel id and name seperated by a colon
-# DELETE THIS: Channel_ID:Channel_Name
+#DELETE THIS: [Add new line delineated channels here]. One each line with channel id and name seperated by a colon. Channel name is how you want the name to show up on the frontend
+#DELETE THIS EXAMPLE: Channel_ID:Channel_Name
+#UCUI1qpjJSEbgzdlwmpdVmMw:Twisty Amanozako
