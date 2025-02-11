@@ -1,7 +1,7 @@
 from webapi.web_api import WebAPI
 from typing import Iterable
 
-
+EXCLUSION_OVERRIDE = ["UCXDytlJU6RL8D68VrPZGyIA"]
 class HolodexAPI(WebAPI):
     """
     Class for interacting with the Holodex API
@@ -34,7 +34,7 @@ class HolodexAPI(WebAPI):
                 additional_data = self.get_additional_data(channel["id"])
                 channel["view_count"] = additional_data[0]
                 channel["description"] = additional_data[1]
-                if channel["inactive"]:
+                if channel["inactive"] and channel["id"] not in EXCLUSION_OVERRIDE:
                     self._inactive_channels.append(channel["id"])
                     continue
                 active_channels.append(channel)
