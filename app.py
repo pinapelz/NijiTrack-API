@@ -188,10 +188,10 @@ def get_channel_information(channel_name):
 @app.route("/api/groups")
 def api_groups():
     group_mappings = {}
-    for key, value in member_groups.items():
-        if value not in group_mappings:
-            group_mappings[value] = []
-        group_mappings[value].append(key)
+    for name, group in member_groups.items():
+        if group not in group_mappings:
+            group_mappings[group] = []
+        group_mappings[group].append(name)
     return jsonify(group_mappings)
 
 @app.errorhandler(404)
