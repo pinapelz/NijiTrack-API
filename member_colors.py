@@ -63,3 +63,5 @@ member_groups = {
     'Kannagi Loki': 'Phase JP - Kaleido',
     'Gram Pico': 'Phase JP - Kaleido'
 }
+
+GRADUATED =  ["Fuura Yuri", "Saya Sairroxs"]

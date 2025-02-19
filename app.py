@@ -8,7 +8,7 @@ from sklearn.linear_model import Ridge
 import numpy as np
 import os
 from dotenv import load_dotenv
-from member_colors import member_groups
+from member_colors import member_groups, GRADUATED
 
 load_dotenv()
 
@@ -189,6 +189,8 @@ def get_channel_information(channel_name):
 def api_groups():
     group_mappings = {}
     for key, value in member_groups.items():
+        if value in GRADUATED:
+            continue
         if value not in group_mappings:
             group_mappings[value] = []
         group_mappings[value].append(key)
