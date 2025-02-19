@@ -189,7 +189,7 @@ def get_channel_information(channel_name):
 def api_groups():
     group_mappings = {}
     for name, group in member_groups.items():
-        if group in GRADUATED:
+        if name in GRADUATED:
             continue
         if group not in group_mappings:
             group_mappings[group] = []
