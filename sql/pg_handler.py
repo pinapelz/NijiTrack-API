@@ -12,7 +12,7 @@ class PostgresHandler:
         }
         self._connection = psycopg2.connect(**db_params)
         self.print_to_debug("Connected to database successfully")
-    
+
     def get_connection(self):
         return self._connection
 
@@ -21,7 +21,7 @@ class PostgresHandler:
         cursor.execute(f'CREATE TABLE IF NOT EXISTS "{name}" ({column})')
         self._connection.commit()
         cursor.close()
-    
+
     def clear_table(self, name: str):
         cursor = self._connection.cursor()
         cursor.execute(f"DELETE FROM {name}")
@@ -39,22 +39,36 @@ class PostgresHandler:
             return True
         else:
             return False
-    
+
     def insert_row(self, table_name, column, data):
         try:
-            cursor  = self._connection.cursor()
-            placeholders = ', '.join(['%s'] * len(data))
-            query = f'INSERT INTO "{table_name}" ({column}) VALUES ({placeholders})'
-            cursor.execute(query, data)
+            cursor = self._connection.cursor()
+            if table_name == "subscriber_data":
+                column_list = column.split(", ")
+                try:
+                    channel_id_index = column_list.index("channel_id")
+                    channel_id_value = data[channel_id_index]
+                    cursor.execute(f'DELETE FROM "{table_name}" WHERE channel_id = %s', (channel_id_value,))
+                    placeholders = ', '.join(['%s'] * len(data))
+                    query = f'INSERT INTO "{table_name}" ({column}) VALUES ({placeholders})'
+                    cursor.execute(query, data)
+
+                    print(f"Replaced data for channel_id: {channel_id_value}")
+                except ValueError:
+                    placeholders = ', '.join(['%s'] * len(data))
+                    query = f'INSERT INTO "{table_name}" ({column}) VALUES ({placeholders})'
+                    cursor.execute(query, data)
+            else:
+                placeholders = ', '.join(['%s'] * len(data))
+                query = f'INSERT INTO "{table_name}" ({column}) VALUES ({placeholders})'
+                cursor.execute(query, data)
             self._connection.commit()
-            print("Data Inserted:", data)
+            return True
         except Error as err:
             self._connection.rollback()
-            print("Error inserting data")
+            print("Error inserting or updating data")
             print(err)
-            if "duplicate key" not in str(err).lower():
-                return False
-        return True
+            return False
 
     def update_row(self, table_name: str, column: str, value: str, update_column: str, update_value: str):
         try:
@@ -69,7 +83,7 @@ class PostgresHandler:
             print(e)
             return False
         return True
-    
+
     def get_rows(self, table_name: str, column: str, value: str):
         try:
             cursor = self._connection.cursor()
@@ -82,7 +96,7 @@ class PostgresHandler:
             print(f"Failed to fetch row from {table_name} WHERE {column} is {value}")
             print(e)
             return False
-    
+
     def get_random_row(self, table_name: str, count: int, condition: str = None):
         if condition is None:
             condition = "1 = 1"
@@ -97,7 +111,7 @@ class PostgresHandler:
             print(f"Failed to select random rows from {table_name}")
             print(e)
             return False
-    
+
     def check_health(self):
         cursor = self._connection.cursor()
         cursor.execute("SELECT 1")
@@ -107,7 +121,7 @@ class PostgresHandler:
             return True
         else:
             return False
-    
+
     def delete_row(self, table_name: str, column: str, value: str):
         try:
             cursor = self._connection.cursor()
@@ -121,7 +135,7 @@ class PostgresHandler:
             print(e)
             return False
         return True
-    
+
     def execute_query(self, query: str, data: tuple = None):
         try:
             cursor = self._connection.cursor()
@@ -136,7 +150,7 @@ class PostgresHandler:
             print(f"Failed to execute query: {query}")
             print(e)
             return False
-    
+
     def reset_auto_increment(self, table_name: str):
         try:
             cursor = self._connection.cursor()
@@ -150,7 +164,7 @@ class PostgresHandler:
             print(e)
             return False
         return True
-    
+
     def get_most_recently_added_row_time(self, table_name: str):
         try:
             cursor = self._connection.cursor()
@@ -163,10 +177,10 @@ class PostgresHandler:
             print(f"Failed to get most recently added row from {table_name}")
             print(e)
             return False
-    
+
     def print_to_debug(self, message: str):
         print("[PostgresHandler] " + message)
 
-    
+
     def close_connection(self):
         self._connection.close()
