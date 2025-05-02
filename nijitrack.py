@@ -55,7 +55,7 @@ def record_subscriber_data(data: list, force_refresh: bool = False):
         elif refresh_daily:
             server.update_row(DATA_SETTING["TABLE_DAILY"], "channel_id", channel_id, "sub_diff", sub_count)
             server.insert_row(table_name = DATA_SETTING["TABLE_HISTORICAL"], column = DATA_SETTING["HISTORICAL_HEADER"], data=data_tuple)
-    
+
     def check_diff_refresh():
         last_updated = server.get_most_recently_added_row_time(DATA_SETTING["TABLE_HISTORICAL"])
         if last_updated is None or len(last_updated) == 0 or not last_updated[0]:
@@ -107,7 +107,6 @@ def holodex_generation(server: PostgresHandler, force_refresh: bool = False):
     Generates the data from the Holodex API
     """
     holodex_organizations = DATA_SETTING["HOLODEX_ORGS"].split(",")
-    server.clear_table(DATA_SETTING["TABLE_LIVE"])
     holodex = HolodexAPI(os.environ.get("HOLODEX_KEY"), organization="Phase%20Connect")
     for organization in holodex_organizations:
         holodex.set_organization(organization)
