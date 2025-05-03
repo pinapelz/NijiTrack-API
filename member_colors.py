@@ -26,7 +26,10 @@ member_color_map = {
     'Kaminari Clara': '#91BCC6',
     'Kannagi Loki': '#982428',
     'Fuura Yuri': '#000000',
-    'Gram Pico': '#FFBBD7'
+    'Gram Pico': '#FFBBD7',
+    'Eepy Sleepy': "#AC97E0",
+    "Mari Mari": "#FE6F25",
+    "Clio Aite": "#648768",
 }
 
 # Description: Groupings to make it easier to see who is in which group. On the legend
@@ -52,6 +55,9 @@ member_groups = {
     'Ember Amane': 'Phase Invaders',
     'Dizzy Dokuro': 'Phase Invaders',
     'Jelly Hoshiumi': 'Phase Invaders',
+    'Eepy Sleepy': "Phase Invaders Quest",
+    "Mari Mari": "Phase Invaders Quest",
+    "Clio Aite": "Phase Invaders Quest",
     'Saya Sairroxs': 'Phase 03 - Euphoria',
     'Runie Ruse': 'Phase 03 - Euphoria',
     'Muu Muyu': 'Phase 03 - Euphoria',
@@ -61,7 +67,7 @@ member_groups = {
     'Kokoromo Memory': 'Phase JP - Kaleido',
     'Kaminari Clara': 'Phase JP - Kaleido',
     'Kannagi Loki': 'Phase JP - Kaleido',
-    'Gram Pico': 'Phase JP - Kaleido'
+    'Gram Pico': 'Phase JP - Kaleido',
 }
 
 GRADUATED =  ["Fuura Yuri", "Saya Sairroxs"]
