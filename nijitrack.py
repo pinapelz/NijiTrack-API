@@ -4,6 +4,7 @@ from datetime import datetime
 
 import dotenv
 import pytz
+import twitch
 from b2sdk.v2 import *
 from logger import *
 from sql.pg_handler import PostgresHandler
@@ -35,6 +36,7 @@ def initialize_database(server: PostgresHandler):
     server.create_table(name = DATA_SETTING["TABLE_LIVE"], column = DATA_SETTING["LIVE_COLUMNS"])
     server.create_table(name = DATA_SETTING["TABLE_HISTORICAL"], column = DATA_SETTING["HISTORICAL_COLUMNS"])
     server.create_table(name = DATA_SETTING["TABLE_DAILY"], column = DATA_SETTING["DAILY_COLUMNS"])
+    server.create_table(name = DATA_SETTING["TABLE_TWITCH"], column = DATA_SETTING["TWITCH_COLUMNS"])
 
 
 @track_task_time("Inserting Live Data into Database")
@@ -98,6 +100,18 @@ def record_subscriber_data(data: list, force_refresh: bool = False):
         data_tuple = (channel_id, pfp, channel_name, sub_count, sub_org, video_count, view_count, formatted_time)
         historical_data_tuple = (channel_id, pfp, channel_name, sub_count, formatted_time)
         server.insert_row(table_name = DATA_SETTING["TABLE_LIVE"], column = DATA_SETTING["LIVE_HEADER"], data=data_tuple)
+        twitch_name = twitch.youtube_to_twitch_map.get(channel_id, None)
+        if twitch_name:
+            follower_count = twitch.get_followers_total(twitch_name)
+            if follower_count is None:
+                print("[TWITCH] Failed to get follower count attempting to scrape", twitch_name)
+                follower_count = twitch.get_total_follower_count_scrape(twitch_name)
+            if follower_count:
+                print(f"[TWITCH] Got follower count for {channel_name} -> {follower_count}")
+                server.delete_row(table_name = DATA_SETTING["TABLE_TWITCH"], column = "channel_id", value = channel_id)
+                server.insert_row(table_name = DATA_SETTING["TABLE_TWITCH"], column = DATA_SETTING["TWITCH_HEADER"], data=(channel_id, follower_count))
+            else:
+                print(f"[TWITCH] Failed to get follower count for {channel_name}. Likely too low")
         update_data_records(historical_data_tuple, should_update_historical_data)
 
 
