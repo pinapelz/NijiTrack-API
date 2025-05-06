@@ -43,6 +43,36 @@ def api_subscribers():
     subscriber_data = {"timestamp": datetime.datetime.now(), "channel_data": channel_data_list}
     return jsonify(subscriber_data)
 
+@app.route("/api/twitch")
+def api_twitch():
+    server = create_database_connection()
+    query = '''
+        SELECT sd.*, h.*, ts.follower_count
+        FROM subscriber_data sd
+        INNER JOIN "24h_historical" h ON sd.channel_id = h.channel_id
+        LEFT JOIN twitch_stats ts ON sd.channel_id = ts.channel_id
+        ORDER BY sd.subscriber_count DESC
+    '''
+    data = server.execute_query(query)
+    channel_data_list = []
+    for row in data:
+        youtube_subs = row[4]
+        twitch_followers = row[-1] if row[-1] is not None else 0
+        total_followers = youtube_subs + twitch_followers
+        channel_data_list.append({
+            "channel_name": row[3],
+            "profile_pic": row[2],
+            "subscribers": youtube_subs,
+            "sub_org": row[5],
+            "twitch_followers": twitch_followers,
+            "total_sum": total_followers,
+        })
+    subscriber_data = {
+        "timestamp": datetime.datetime.now(),
+        "channel_data": channel_data_list
+    }
+    return jsonify(subscriber_data)
+
 @app.route("/api/subscribers/<channel_name>")
 def api_subscribers_channel(channel_name):
     server = create_database_connection()
