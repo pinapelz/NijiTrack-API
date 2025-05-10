@@ -187,17 +187,80 @@ def uploadFileToBucketR2(filepath: str) -> bool:
     )
     try:
         with open(filepath, "rb") as f:
-            s3.Bucket(bucket_name).upload_fileobj(f, filepath)
+            s3.Bucket(bucket_name).upload_fileobj(
+                Fileobj=f,
+                Key=filepath,
+                ExtraArgs={"ContentType": "application/json"}
+            )
+        print("Successfully uploaded", filepath, "to R2")
         return True
     except Exception as e:
         print("An error occurred while attempting to upload to R2")
         print(e)
         return False
 
-def generate_api_routes(bucket_type: BucketType):
-    import app
-    api_subscribers = app.api_subscribers()
-    print(api_subscribers)
+def generate_api_routes(check_exists, bucket_type: BucketType, server):
+    print(check_exists)
+    remote_api = os.environ.get("API_URL")
+    def write_file(filename: str, data):
+        import json
+        with open(filename, 'w', encoding='utf-8') as file:
+            json.dump(data, file, ensure_ascii=False, indent=2, default=str)
+
+    def handle_upload(filename: str):
+        if check_exists and fs.compare_file_with_url(filename, remote_api + "/" + filename):
+            print("Skipping upload. Data on remote matches for " + filename)
+            os.remove(filename)
+            return
+        if bucket_type == BucketType.B2:
+            uploadFileToBucketB2(filename)
+        elif bucket_type == BucketType.R2:
+            uploadFileToBucketR2(filename)
+        else:
+            print("Invalid bucket type specified.")
+            os.remove(filename)
+            return False
+        os.remove(filename)
+
+    import routes
+    query = f"SELECT name from {DATA_SETTING['TABLE_LIVE']}"
+    channel_names = [name[0] for name in server.execute_query(query)]
+
+    api_subscribers = routes.get_subscribers_data()
+    write_file("subscribers.json", api_subscribers)
+    handle_upload("subscribers.json")
+
+    api_twitch = routes.get_twitch_data()
+    write_file("twitch.json", api_twitch)
+    handle_upload("twitch.json")
+
+    api_groups = routes.get_group_mappings()
+    write_file("groups.json", api_groups)
+    handle_upload("groups.json")
+
+    for name in channel_names:
+        name_space_removed = name.replace(" ", "")
+
+        api_subscribers_timeseries = routes.get_channel_timeseries(name)
+        write_file(f"subscribers_{name_space_removed}.json", api_subscribers_timeseries)
+        handle_upload(f"subscribers_{name_space_removed}.json")
+
+        api_subscribers_7d = routes.get_channel_7d(name)
+        write_file(f"subscribers_{name_space_removed}_7d.json", api_subscribers_7d)
+        handle_upload(f"subscribers_{name_space_removed}_7d.json")
+
+        milestones = routes.get_channel_milestones(name)
+        write_file(f"milestones_{name_space_removed}.json", milestones)
+        handle_upload(f"milestones_{name_space_removed}.json")
+
+        diffs = routes.get_channel_diffs(name)
+        write_file(f"diffs_{name_space_removed}.json", diffs)
+        handle_upload(f"diffs_{name_space_removed}.json")
+
+        info = routes.get_channel_info(name)
+        write_file(f"info_{name_space_removed}.json", info)
+        handle_upload(f"info_{name_space_removed}.json")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="NijiTrack - A Subscriber Tracker")
@@ -207,6 +270,7 @@ if __name__ == "__main__":
     parser.add_argument('--uploadGraph', action='store_true', help="Upload graph html to Backblaze B2")
     parser.add_argument('--uploadRoutes', action='store_true', help="Pre-generate every API route and upload it")
     parser.add_argument('--ff', action='store_true', help="Force a full refresh of all data (override daily refresh)")
+    parser.add_argument('--checkExists', action='store_true', help="If json data alrady exists on remote and its the same, skip upload")
     args = parser.parse_args()
     server = create_database_connection()
     initialize_database(server)
@@ -242,4 +306,5 @@ if __name__ == "__main__":
     if args.uploadRoutes:
         if upstream_bucket is None:
             print("Tried to upload routes but no remote source has been specified. Skipping....")
-        generate_api_routes(upstream_bucket)
+        generate_api_routes(args.checkExists, upstream_bucket, server)
+        print("DONE! Uploading Static API Routes")

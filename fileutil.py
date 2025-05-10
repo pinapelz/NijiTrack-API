@@ -2,6 +2,8 @@ import os.path
 import urllib.request
 import json
 import configparser
+import requests
+import hashlib
 
 
 def _read_file(path: str, lines=True) -> list:
@@ -90,3 +92,15 @@ def load_json_file(json_file_path: str) -> dict:
         return json.load(file)
 
 
+def compare_file_with_url(file_path, url):
+    try:
+        with open(file_path, "rb") as f:
+            local_hash = hashlib.md5(f.read()).hexdigest()
+        response = requests.get(url)
+        response.raise_for_status()
+        remote_hash = hashlib.md5(response.content).hexdigest()
+        print(f"HASH RESULT: {file_path} | {url} ->  {local_hash == remote_hash}")
+        return local_hash == remote_hash
+    except Exception as e:
+        print(f"Error comparing {file_path} and {url}: {e}")
+        return False
