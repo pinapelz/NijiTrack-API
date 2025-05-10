@@ -173,7 +173,7 @@ def uploadFileToBucketB2(filepath: str) -> bool:
         print(e)
         return False
 
-def uploadFileToBucketR2(filepath: str) -> bool:
+def uploadFileToBucketR2(filepath: str, content_type: str = "application/json") -> bool:
     import boto3
     account_id = os.environ.get("R2_ACCOUNT_ID")
     access_key = os.environ.get("R2_ACCESS_KEY")
@@ -190,7 +190,7 @@ def uploadFileToBucketR2(filepath: str) -> bool:
             s3.Bucket(bucket_name).upload_fileobj(
                 Fileobj=f,
                 Key=filepath,
-                ExtraArgs={"ContentType": "application/json"}
+                ExtraArgs={"ContentType": content_type}
             )
         print("Successfully uploaded", filepath, "to R2")
         return True
@@ -297,12 +297,12 @@ if __name__ == "__main__":
     if args.uploadGraph:
         if upstream_bucket is None:
             print("Tried to upload graph but no remote source has been specified. Skipping....")
-            match upstream_bucket:
-                case BucketType.B2:
-                    uploadFileToBucketB2("index.html")
-                case BucketType.R2:
-                    uploadFileToBucketR2("index.html")
-
+            exit(1)
+        match upstream_bucket:
+            case BucketType.B2:
+                uploadFileToBucketB2("index.html")
+            case BucketType.R2:
+                uploadFileToBucketR2("index.html", content_type="text/html; charset=utf-8")
     if args.uploadRoutes:
         if upstream_bucket is None:
             print("Tried to upload routes but no remote source has been specified. Skipping....")
