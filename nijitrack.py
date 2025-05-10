@@ -5,14 +5,18 @@ from datetime import datetime
 import dotenv
 import pytz
 import twitch
-from b2sdk.v2 import *
 from logger import *
 from sql.pg_handler import PostgresHandler
 from webapi.holodex import HolodexAPI
 from webapi.youtube import YouTubeAPI
+from enum import Enum
 
 import fileutil as fs
 import graph
+
+class BucketType(Enum):
+    B2 = 1
+    R2 = 2
 
 dotenv.load_dotenv()
 
@@ -150,27 +154,58 @@ def combine_excluded_channel_ids(inactive_channel_data: list, excluded_channels:
         channel_ids.append(inactive_channel)
     return channel_ids
 
-def uploadFileToBucket(filepath: str) -> bool:
+def uploadFileToBucketB2(filepath: str) -> bool:
+    from b2sdk.v2 import InMemoryAccountInfo, B2Api
     try:
         info = InMemoryAccountInfo()
         b2_api = B2Api(info)
         application_key_id = os.environ.get("B2_APP_ID")
         application_key = os.environ.get("B2_APP_KEY")
+        bucket_name = os.environ.get("B2_BUCKET_NAME")
         file_info = {'how': 'good-file'}
         b2_api.authorize_account("production", application_key_id, application_key)
         b2_file_name = "graph.html"
-        bucket = b2_api.get_bucket_by_name("vtuber-rabbit-hole-archive")
+        bucket = b2_api.get_bucket_by_name(bucket_name)
         bucket.upload_local_file(local_file=filepath, file_name=b2_file_name, file_info=file_info)
         return True
     except Exception as e:
         print("An error occured while attempting to upload to B2")
         print(e)
-        return False;
+        return False
+
+def uploadFileToBucketR2(filepath: str) -> bool:
+    import boto3
+    account_id = os.environ.get("R2_ACCOUNT_ID")
+    access_key = os.environ.get("R2_ACCESS_KEY")
+    secret_key = os.environ.get("R2_SECRET_KEY")
+    bucket_name = os.environ.get("R2_BUCKET_NAME")
+    s3 = boto3.resource(
+        's3',
+        endpoint_url=f'https://{account_id}.r2.cloudflarestorage.com',
+        aws_access_key_id=access_key,
+        aws_secret_access_key=secret_key
+    )
+    try:
+        with open(filepath, "rb") as f:
+            s3.Bucket(bucket_name).upload_fileobj(f, filepath)
+        return True
+    except Exception as e:
+        print("An error occurred while attempting to upload to R2")
+        print(e)
+        return False
+
+def generate_api_routes(bucket_type: BucketType):
+    import app
+    api_subscribers = app.api_subscribers()
+    print(api_subscribers)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="NijiTrack - A Subscriber Tracker")
     parser.add_argument('--mode', choices=['yt', 'holodex'], help='Specify the data source to use (yt or holodex)')
-    parser.add_argument('--b2', action='store_true', help="Upload graph html to Backblaze B2")
+    parser.add_argument('--b2', action='store_true', help="Use Backblaze B2 as the bucket upload source")
+    parser.add_argument('--r2', action='store_true', help="Use Cloudflare R2 as the bucket upload source")
+    parser.add_argument('--uploadGraph', action='store_true', help="Upload graph html to Backblaze B2")
+    parser.add_argument('--uploadRoutes', action='store_true', help="Pre-generate every API route and upload it")
     parser.add_argument('--ff', action='store_true', help="Force a full refresh of all data (override daily refresh)")
     args = parser.parse_args()
     server = create_database_connection()
@@ -189,7 +224,22 @@ if __name__ == "__main__":
     graph_html = graph.plot_subscriber_count_over_time(server, DATA_SETTING["TABLE_HISTORICAL"], exclude_channels=combine_excluded_channel_ids(inactive_channels, fs.get_excluded_channels()))
     with open("index.html", "w", encoding="utf-8") as file:
         file.write(graph_html)
+    upstream_bucket = None
     if args.b2:
-        uploadFileToBucket("index.html")
-    else:
-        print("Skipping B2 Upload")
+        upstream_bucket = BucketType.B2
+    elif args.r2:
+        upstream_bucket = BucketType.R2
+
+    if args.uploadGraph:
+        if upstream_bucket is None:
+            print("Tried to upload graph but no remote source has been specified. Skipping....")
+            match upstream_bucket:
+                case BucketType.B2:
+                    uploadFileToBucketB2("index.html")
+                case BucketType.R2:
+                    uploadFileToBucketR2("index.html")
+
+    if args.uploadRoutes:
+        if upstream_bucket is None:
+            print("Tried to upload routes but no remote source has been specified. Skipping....")
+        generate_api_routes(upstream_bucket)
