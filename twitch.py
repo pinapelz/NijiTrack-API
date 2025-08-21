@@ -50,10 +50,12 @@ def get_total_follower_count_scrape(username: str) -> int:
             "Chrome/124.0.0.0 Safari/537.36"
         )
     }
-
-    response = requests.get(url, headers=headers, timeout=10)
-    response.raise_for_status()
-    html = response.text
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        html = response.text
+    except:
+        return None
 
     soup = BeautifulSoup(html, 'html.parser')
     for li in soup.find_all("li", class_="list-group-item"):
