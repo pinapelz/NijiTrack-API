@@ -143,8 +143,13 @@ class PostgresHandler:
                 cursor.execute(query)
             else:
                 cursor.execute(query, data)
-            result = cursor.fetchall()
-            return result
+            query_type = query.strip().upper().split()[0]
+            if query_type == 'SELECT':
+                result = cursor.fetchall()
+                return result
+            else:
+                self._connection.commit()
+                return True
         except Error as e:
             self._connection.rollback()
             print(f"Failed to execute query: {query}")
