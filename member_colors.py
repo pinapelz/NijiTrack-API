@@ -30,6 +30,12 @@ member_color_map = {
     'Eepy Sleepy': "#AC97E0",
     "Mari Mari": "#FE6F25",
     "Clio Aite": "#648768",
+    "Anya Nyabyss": "#A68CE3",
+    "Bibi Biscuit": "#BD2D4E",
+    "Nitya Nil": "#5D8000",
+    "Malice Evermore": "#551D36",
+    "Wilhelmina Frost": "#99CBD6",
+    "Sinon Sinfornia": "#40D0F3"
 }
 
 # Description: Groupings to make it easier to see who is in which group. On the legend
@@ -68,6 +74,12 @@ member_groups = {
     'Kaminari Clara': 'Phase JP - Kaleido',
     'Kannagi Loki': 'Phase JP - Kaleido',
     'Gram Pico': 'Phase JP - Kaleido',
+    "Anya Nyabyss": "Phase 04 - SAGA",
+    "Bibi Biscuit": "Phase 04 - SAGA",
+    "Nitya Nil": "Phase 04 - SAGA",
+    "Malice Evermore": "Phase 04 - SAGA",
+    "Wilhelmina Frost": "Phase 04 - SAGA",
+    "Sinon Sinfornia": "Phase 04 - SAGA"
 }
 
 GRADUATED =  ["Fuura Yuri", "Saya Sairroxs"]
