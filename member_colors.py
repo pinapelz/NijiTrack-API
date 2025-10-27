@@ -35,7 +35,7 @@ member_color_map = {
     "Nitya Nil": "#5D8000",
     "Malice Evermore": "#551D36",
     "Wilhelmina Frost": "#99CBD6",
-    "Sinon Sinfornia": "#40D0F3"
+    "Sinon Sinfonia": "#40D0F3"
 }
 
 # Description: Groupings to make it easier to see who is in which group. On the legend
@@ -79,7 +79,7 @@ member_groups = {
     "Nitya Nil": "Phase 04 - SAGA",
     "Malice Evermore": "Phase 04 - SAGA",
     "Wilhelmina Frost": "Phase 04 - SAGA",
-    "Sinon Sinfornia": "Phase 04 - SAGA"
+    "Sinon Sinfonia": "Phase 04 - SAGA"
 }
 
 GRADUATED =  ["Fuura Yuri", "Saya Sairroxs"]
