@@ -28,7 +28,15 @@ youtube_to_twitch_map = {
     "UCGXwv2zYOxeWiNNyPiLCBCQ": "kokoromomemory",
     "UCnNLZWjl4GvVF4s8zBT9_kA": "ayaseyuu_",
     "UCRlZaszk84YXjRtdPCxqjvw": "kaminariclara",
-    "UCtWH0tVAcUcSm4v96H5cAqQ": "grampico"
+    "UCtWH0tVAcUcSm4v96H5cAqQ": "grampico",
+    "UCBXLH5mn0nxgFH3udMtw4ig": "nitya_nil",
+    "UCjXJYPsKxoJyc-1RPB6dSyw": "fujikurauruka",
+    "UCupmjRr7kPgzXKh-cPxxGbg": "erinamakina",
+    "UC5qlAhrec6-0J-K3zmhNPPQ":"chisakaairi",
+    "UCmbokzv5VTe9LeuzAFcDu9A": "bibibiscuitch",
+    "UCzA7j_ixOvBz39saDYlbRiA": "wilhelminafrost",
+    "UC0mEc9OzI-B9HRi1v-GCVBw": "maliceevermore",
+    "UCjqlgGE9PA7xEbE6XW5Tl9g": "sinonsinfonia",
 }
 
 def get_followers_total(channel_name):
