@@ -82,4 +82,4 @@ member_groups = {
     "Sinon Sinfonia": "Phase 04 - SAGA"
 }
 
-GRADUATED =  ["Fuura Yuri", "Saya Sairroxs"]
+GRADUATED =  ["Fuura Yuri", "Saya Sairroxs", "Kokoromo Memory"]
